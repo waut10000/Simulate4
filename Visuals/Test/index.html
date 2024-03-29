@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rainwater Pit Visualization</title>
+<style>
+  .rainwater-pit {
+    width: 200px; /* Adjust as needed */
+    height: 400px; /* Adjust as needed */
+    background-color: #ddd; /* Color of the pit */
+    border: 2px solid #000; /* Border to represent the pit */
+    position: relative;
+    overflow: hidden;
+  }
+
+  .water-level {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    background-color: #00f; /* Color of the water */
+  }
+</style>
+</head>
+<body>
+
+<div id="rainwaterPit" class="rainwater-pit">
+  <div id="waterLevel" class="water-level" style="height: 0%;"> <!-- Initial water level -->
+    <!-- Adjust the height here based on the variable -->
+  </div>
+</div>
+
+<script>
+  // Example JavaScript to dynamically update the water level
+  function updateWaterLevel(percentage) {
+    document.getElementById('waterLevel').style.height = percentage + '%';
+  }
+
+  // Simulate updating the water level
+  // Replace this with the actual code that receives the percentage value
+  updateWaterLevel(56); // Update to the desired percentage
+</script>
+
+</body>
+</html>
