@@ -1,0 +1,17 @@
+// Prepare SQL parameters
+// The query uses placeholders for Diepte and Meter-Box-ID in that order
+
+// Assuming msg.payload is JSON and needs parsing
+if (typeof msg.payload === 'string') {
+    // Parse the JSON string to an object
+    msg.payload = JSON.parse(msg.payload);
+}
+
+// Make sure to access properties with the correct names
+let depth = msg.payload.dept; // Use 'dept' instead of 'depth'
+let uuid = msg.payload.uuid;
+
+msg.payload = [depth, uuid]; // This aligns with the placeholders in your query
+msg.topic = "INSERT INTO `Meter-Data` (`Data-ID`, `Timestamp`, `Diepte`, `Meter-Box-ID`) VALUES (UUID(), NOW(), ?, ?)";
+
+return msg;
