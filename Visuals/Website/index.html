@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rainwater Pit Visualization</title>
+<style>
+  .rainwater-pit {
+    width: 200px; /* Adjust as needed */
+    height: 400px; /* Adjust as needed */
+    background-color: #ddd; /* Color of the pit */
+    border: 2px solid #000; /* Border to represent the pit */
+    position: relative;
+    overflow: hidden;
+  }
+
+  .water-level {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    background-color: #00f; /* Color of the water */
+  }
+</style>
+</head>
+<body>
+
+<div id="rainwaterPit" class="rainwater-pit">
+  <div id="waterLevel" class="water-level" style="height: 0%;"> <!-- Initial water level -->
+    <!-- Adjust the height here based on the variable -->
+  </div>
+</div>
+
+<script>
+  async function fetchWaterLevel() {
+    const username = 'admin'; // Replace with your actual username
+    const password = 'secret'; // Replace with your actual password
+    const headers = new Headers();
+    headers.set('Authorization', 'Basic ' + btoa(username + ":" + password));
+
+    try {
+      const response = await fetch('http://your-api-url/api/water-level', {method: 'GET', headers: headers});
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data.percentage; // Assuming your API returns JSON with a percentage field
+    } catch (error) {
+      console.error('Failed to fetch water level:', error);
+    }
+  }
+
+  async function updateWaterLevel() {
+    const percentage = await fetchWaterLevel();
+    if (percentage !== null) {
+      document.getElementById('waterLevel').style.height = percentage + '%';
+    } else {
+      // Handle error or provide a fallback action
+      console.log('Could not fetch water level data.');
+    }
+  }
+
+  // Fetch and update water level upon page load
+  document.addEventListener('DOMContentLoaded', updateWaterLevel);
+</script>
+
+</body>
+</html>
