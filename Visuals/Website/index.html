@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rainwater Pit Visualization</title>
 <style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+
   .rainwater-pit {
     width: 200px; /* Adjust as needed */
     height: 400px; /* Adjust as needed */
@@ -12,6 +20,8 @@
     border: 2px solid #000; /* Border to represent the pit */
     position: relative;
     overflow: hidden;
+    border-radius: 25px; /* Rounded edges */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Add some shadow for depth */
   }
 
   .water-level {
@@ -19,6 +29,8 @@
     position: absolute;
     bottom: 0;
     background-color: #00f; /* Color of the water */
+    border-bottom-left-radius: 25px; /* Round bottom-left edge */
+    border-bottom-right-radius: 25px; /* Round bottom-right edge */
   }
 </style>
 </head>
