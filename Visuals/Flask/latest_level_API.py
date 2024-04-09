@@ -55,7 +55,7 @@ def water_level():
     meter_info = get_latest_meter_info()
     if meter_info is not None:
         fill_percentage = calculate_fill_percentage(meter_info['depth'], meter_info['height'], meter_info['capacity'])
-        return jsonify({'fill_percentage': fill_percentage}), 200
+        return jsonify({'percentage': fill_percentage}), 200
     else:
         return jsonify({'error': 'Meter information not found'}), 404
 
