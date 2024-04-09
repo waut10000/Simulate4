@@ -22,6 +22,11 @@ long procent;
 // MQTT topic
 const char *mqttPubTopic = "esp32/dept";
 
+// retry variable
+int retries = 3;
+int retryCount = 0;
+bool successfullySent = false;
+
 //
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -29,10 +34,11 @@ PubSubClient client(espClient);
 void setup_wifi()
 {
   WiFi.begin(ssid, password);
+  Serial.println("Connecting to WiFi...");
   while (WiFi.status() != WL_CONNECTED)
   {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
+    delay(500);
+    Serial.print(".");
   }
   Serial.println("Connected to WiFi");
 }
@@ -64,6 +70,7 @@ void reconnect()
 
 void setup() {
   Serial.begin(115200); // Starts the serial communication
+  Serial.println("Waking up..");
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
   setup_wifi();
@@ -127,11 +134,33 @@ void sendDeptToNodeRed(float dept)
   Serial.println("Dept and ID sent!");
 }
 
-
 void loop() {
   
   float measured_dept = MeasureDept();
   sendDeptToNodeRed(measured_dept);
 
-  delay(20000);
+  // Wait for MQTT message confirmation for up to 3 retries
+  while (!successfullySent && retryCount < retries) {
+    if (client.loop() && client.connected()) {
+      successfullySent = true;
+      Serial.println("Data sent successfully!");
+      break;
+    }
+    delay(5000); // Wait 5 seconds before retry
+    retryCount++;
+  }
+
+  // If failed to send data after #3 retries
+  if (!successfullySent && retryCount == retries) {
+    Serial.println("Failed to send data to Node-RED via MQTT after 3 retries.");
+    // Enter deep sleep mode
+    deepsleep();
+  }
+
+  // If data sent successfully or after # retries
+  if (successfullySent || retryCount == retries) {
+    // Enter deep sleep mode
+    deepsleep();
+  }
+  //delay(20000);
 }
