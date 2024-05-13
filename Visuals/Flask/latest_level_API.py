@@ -1,13 +1,12 @@
 from flask import Flask, jsonify
 import mysql.connector
 from flask_httpauth import HTTPBasicAuth
+import json
+import bcrypt
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
-users = {
-    "admin": "admin",  # example
-}
 
 DB_CONFIG = {
     'user': 'your_db_username',
@@ -17,10 +16,21 @@ DB_CONFIG = {
     'raise_on_warnings': True
 }
 
+# Load hashed user data
+with open('hashed_users.json', 'r') as f:
+    user_data = json.load(f)
+
 @auth.verify_password
 def verify_password(username, password):
-    if username in users and users[username] == password:
-        return username
+    if username in user_data:
+        # Compare the provided password with the hashed one
+        return bcrypt.checkpw(password.encode('utf-8'), user_data[username].encode('utf-8'))
+    return False
+
+@app.route('/')
+@auth.login_required
+def index():
+    return f"Hello, {auth.current_user()}!"
 
 def get_db_connection():
     conn = mysql.connector.connect(**DB_CONFIG)
@@ -31,11 +41,7 @@ def get_latest_meter_info():
     cursor = conn.cursor(dictionary=True)
     # Adjust the query below according to your actual table names and column names
     query = '''
-    SELECT m.uuid, m.capacity, m.height, meas.depth, meas.timestamp
-    FROM meter AS m
-    JOIN measurement AS meas ON m.uuid = meas.meter_uuid
-    ORDER BY meas.timestamp DESC
-    LIMIT 1
+    SELECT Diepte FROM `Meter-Data` ORDER BY Timestamp DESC Limit 1;
     '''
     cursor.execute(query)
     result = cursor.fetchone()
@@ -60,4 +66,4 @@ def water_level():
         return jsonify({'error': 'Meter information not found'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')  # Listen on all available IPs
+    app.run(host='0.0.0.0', port=8888, debug=True)
