@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Overview</title>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+</head>
+<body>
+    <h1>Monthly Water Level Overview</h1>
+    <label for="month">Select Month:</label>
+    <select id="month" onchange="fetchMonthlyData()">
+        <!-- Options will be populated by JavaScript -->
+    </select>
+    <canvas id="chart" width="400" height="200"></canvas>
+    <button onclick="location.href='/'">Back to Current Data</button>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="{{ url_for('static', filename='monthly_script.js') }}"></script>
+</body>
+</html>
