@@ -7,10 +7,10 @@
 #define trigPin D5
 #define echoPin D7
 
-//define sound speed in cm/uS
+// define sound speed in cm/uS
 #define SOUND_SPEED 0.034
 
-//variable ultrasonic 
+// variable ultrasonic 
 long duration;
 float distanceCm;
 long procent;
@@ -22,32 +22,70 @@ long procent;
 // MQTT topic
 const char *mqttPubTopic = "esp32/dept";
 
-// retry variable
-int retries = 3;
-int retryCount = 0;
-bool successfullySent = false;
-
 //
 WiFiClient espClient;
 PubSubClient client(espClient);
+bool messageReceived = false;
 
-void setup_wifi()
-{
-  WiFi.begin(ssid, password);
-  Serial.println("Connecting to WiFi...");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("Connected to WiFi");
+const int networkCount = sizeof(networks) / sizeof(networks[0]);
+
+
+int waitForConnectResult() {
+    unsigned long start = millis();
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+        if (millis() - start > 10000) { // 10-second timeout
+            return WL_DISCONNECTED;
+        }
+    }
+    return WL_CONNECTED;
 }
+
+void setup_wifi() {
+    WiFi.mode(WIFI_STA); // Set WiFi to station mode
+    WiFi.disconnect();   // Disconnect any previous connections
+    delay(100);
+
+    Serial.println("Scanning for networks...");
+    int n = WiFi.scanNetworks(); // Scan for available networks
+    if (n == 0) {
+        Serial.println("No networks found.");
+    } else {
+        Serial.print(n);
+        Serial.println(" networks found");
+        for (int i = 0; i < n; ++i) {
+            Serial.printf("%d: %s (%d)\n", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
+        }
+
+        // Try to connect to each known network
+        for (int i = 0; i < networkCount; i++) {
+            for (int j = 0; j < n; j++) {
+                if (WiFi.SSID(j) == networks[i][0]) {
+                    Serial.printf("Trying to connect to SSID: %s\n", networks[i][0]);
+                    WiFi.begin(networks[i][0], networks[i][1]);
+                    if (waitForConnectResult() == WL_CONNECTED) {
+                        Serial.printf("Successfully connected to %s\n", networks[i][0]);
+                        return;
+                    } else {
+                        Serial.printf("Failed to connect to %s\n", networks[i][0]);
+                    }
+                }
+            }
+        }
+        Serial.println("Failed to connect to any network.");
+    }
+}
+
 
 void callbackSub(char *topic, byte *payload, unsigned int length)
 {
   Serial.println("Received message on topic: " + String(topic));
+  if (String(topic) == mqttPubTopic)
+  {
+    messageReceived = true;
+  }
   // Handle incoming MQTT messages if needed
-
 }
 
 void reconnect()
@@ -70,7 +108,6 @@ void reconnect()
 
 void setup() {
   Serial.begin(115200); // Starts the serial communication
-  Serial.println("Waking up..");
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
   setup_wifi();
@@ -83,7 +120,7 @@ void setup() {
 void deepsleep() // start deepsleep
 {
   Serial.println("Going to sleep now  Zzz..");
-  delay(1000);
+  delay(500);
   Serial.flush();
   esp_deep_sleep_start();
 }
@@ -111,7 +148,7 @@ float MeasureDept(){
   return distanceCm;
 }
 
-void sendDeptToNodeRed(float dept)
+bool sendDeptToNodeRed(float dept)
 {
   if (!client.connected())
   {
@@ -130,37 +167,41 @@ void sendDeptToNodeRed(float dept)
   snprintf(payload, sizeof(payload), "{\"dept\":%.2f,\"uuid\":\"%s\"}", dept, ID);
   Serial.println(payload);
 
+  messageReceived = false; // Reset messageReceived flag
   client.publish(mqttPubTopic, payload);
   Serial.println("Dept and ID sent!");
+
+  unsigned long startAttemptTime = millis();
+
+  // Wait for acknowledgment with a timeout
+  while (!messageReceived && millis() - startAttemptTime < 5000)
+  {
+    client.loop();
+    delay(100);
+  }
+
+  return messageReceived;
 }
 
 void loop() {
-  
   float measured_dept = MeasureDept();
-  sendDeptToNodeRed(measured_dept);
-
-  // Wait for MQTT message confirmation for up to 3 retries
-  while (!successfullySent && retryCount < retries) {
-    if (client.loop() && client.connected()) {
-      successfullySent = true;
-      Serial.println("Data sent successfully!");
-      break;
+  bool success = false;
+  int attempts = 0;
+  while (!success && attempts < 3)
+  {
+    success = sendDeptToNodeRed(measured_dept);
+    if (!success)
+    {
+      attempts++;
+      Serial.println("Failed to send message, retrying...");
+      delay(5000); // Wait before retrying
     }
-    delay(5000); // Wait 5 seconds before retry
-    retryCount++;
   }
 
-  // If failed to send data after #3 retries
-  if (!successfullySent && retryCount == retries) {
-    Serial.println("Failed to send data to Node-RED via MQTT after 3 retries.");
-    // Enter deep sleep mode
+  if (!success)
+  {
+    Serial.println("Failed to send message after 3 attempts, going to deep sleep.");
     deepsleep();
   }
-
-  // If data sent successfully or after # retries
-  if (successfullySent || retryCount == retries) {
-    // Enter deep sleep mode
-    deepsleep();
-  }
-  //delay(20000);
+  deepsleep();
 }
