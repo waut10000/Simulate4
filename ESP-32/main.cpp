@@ -27,8 +27,8 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 bool messageReceived = false;
 
+//
 const int networkCount = sizeof(networks) / sizeof(networks[0]);
-
 
 int waitForConnectResult() {
     unsigned long start = millis();
@@ -76,7 +76,6 @@ void setup_wifi() {
         Serial.println("Failed to connect to any network.");
     }
 }
-
 
 void callbackSub(char *topic, byte *payload, unsigned int length)
 {
@@ -203,5 +202,7 @@ void loop() {
     Serial.println("Failed to send message after 3 attempts, going to deep sleep.");
     deepsleep();
   }
-  deepsleep();
+
+    deepsleep();
+  //delay(20000); // wait before next measurement
 }
