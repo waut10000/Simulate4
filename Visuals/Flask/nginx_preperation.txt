@@ -1,0 +1,39 @@
+Secure web
+
+Transfer from Mac to rpi 
+scp -r /path/of/flask/script user@pi.local:/home/user/location
+
+Phpmyadmin problem apache and nginx 
+Apache port 80 to 8080
+sudo nano /etc/apache2/ports.conf
+Listen 80 to Listen 8080
+sudo nano /etc/apache2/sites-available/000-default.conf
+<VirtualHost *:80> to <VirtualHost *:8080>
+sudo systemctl restart apache2
+
+Nginx
+sudo nano /etc/nginx/sites-available/myflaskapp
+
+server {
+    listen 80;
+    server_name domain;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/waut/simulate/flask_app.sock;
+    }
+    location /phpmyadmin {
+        proxy_pass http://127.0.0.1:8080/phpmyadmin;
+    }
+}
+
+enabable site
+sudo ln -s /etc/nginx/sites-available/myflaskapp /etc/nginx/sites-enabled/
+
+Reload nginx
+sudo nginx -t
+sudo systemctl reload nginx
+
+SSL certificaat 
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d domain
