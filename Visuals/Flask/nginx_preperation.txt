@@ -37,3 +37,7 @@ sudo systemctl reload nginx
 SSL certificaat 
 sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d domain
+
+sudo systemctl daemon-reload
+sudo systemctl start flask_app
+sudo systemctl enable flask_app
