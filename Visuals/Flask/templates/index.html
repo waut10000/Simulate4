@@ -33,6 +33,11 @@
         ></path>
       </symbol>
     </svg>
+    <div>
+      <label for="box-select">Select Water Pit:</label>
+      <select id="box-select" onchange="fetchData()">
+          <!-- Options will be populated by JavaScript -->
+      </select>
     <div class="box">
       <div class="percent">
         <div class="percentNum" id="count">0</div>
@@ -45,15 +50,68 @@
         <svg viewBox="0 0 560 20" class="water_wave water_wave_front">
           <use xlink:href="#wave"></use>
         </svg>
+        <!--source https://www.w3schools.com/html/html5_svg.asp and https://www.w3schools.com/html/html_charset.asp -->
+      </div>
+      <div class="line">
+        <div class="label">20%</div>
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+    window.onload = function () {
+      populateBoxSelect();
+  };
+
+  function populateBoxSelect() {
+      fetch("http://192.168.0.171:8888/user-boxes")
+          .then(response => response.json())
+          .then(data => {
+              if (data.boxes) {
+                  const boxSelect = document.getElementById("box-select");
+                  data.boxes.forEach(box => {
+                      const option = document.createElement("option");
+                      option.value = box.id;
+                      option.text = box.name;
+                      boxSelect.add(option);
+                  });
+                  // Automatically fetch data for the first pit
+                  fetchData();
+              } else {
+                  console.error("No boxes available");
+              }
+          })
+          .catch(error => console.error("Error fetching boxes:", error));
+  }
+
+  function fetchData() {
+      const boxId = document.getElementById("box-select").value;
+      fetch(`http://192.168.0.171:8888/water-level?box_id=${boxId}`)
+          .then(response => response.json())
+          .then(data => {
+              if (data.hasOwnProperty("percent")) {
+                  const countElement = document.getElementById("count");
+                  const waterElement = document.getElementById("water");
+                  countElement.innerText = data.percent;
+                  waterElement.style.transform = "translate(0," + (100 - data.percent) + "%)";
+              } else {
+                  console.error("Invalid data format:", data);
+              }
+          })
+          .catch(error => console.error("Error fetching data:", error));
+  }
+
+  function loadData() {
+      fetchData(); // Reload data when button is pressed
+  }
+</script>
   </body>
   <footer>
     <div class="button-container">
+      <!-- source buttons https://uiverse.io/PriyanshuGupta28/brave-mole-100-->
       <button onclick="loadData()">Reload</button>
-      <button onclick="location.href='/monthly-overview'">Monthly Overview</button>
+      <button onclick="location.href='/monthly-overview'">
+        Monthly Overview
+      </button>
     </div>
   </footer>
 </html>
